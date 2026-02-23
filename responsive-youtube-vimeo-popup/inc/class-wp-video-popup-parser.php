@@ -75,7 +75,8 @@ class WP_Video_Popup_Parser {
 		} elseif ( 'youtube-nocookie' === $service ) {
 			return self::get_youtube_embed_url( $id, 1, true );
 		} elseif ( 'vimeo' === $service ) {
-			return self::get_vimeo_embed_url( $id );
+			$hash = self::get_vimeo_hash( $url );
+			return self::get_vimeo_embed_url( $id, 1, $hash );
 		} elseif ( 'rumble' === $service ) {
 			return self::get_rumble_embed_url( $id );
 		}
@@ -118,7 +119,7 @@ class WP_Video_Popup_Parser {
 	 */
 	public static function get_youtube_embed_url( $youtube_video_id, $autoplay = 1, $nocookie = false ) {
 
-		$video_url  = ! $nocookie ? 'https://youtube.com' : 'https://www.youtube-nocookie.com';
+		$video_url  = ! $nocookie ? 'https://www.youtube.com' : 'https://www.youtube-nocookie.com';
 		$video_url .= "/embed/$youtube_video_id?autoplay=$autoplay";
 
 		return $video_url;
@@ -134,8 +135,67 @@ class WP_Video_Popup_Parser {
 	 */
 	public static function get_vimeo_id( $url ) {
 
-		// Try to get ID from last portion of url.
-		return self::parse_url_for_last_element( $url );
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( ! $path ) {
+			return '';
+		}
+
+		$path  = trim( $path, '/' );
+		$parts = explode( '/', $path );
+
+		// The first part that is purely numeric is likely the ID.
+		foreach ( $parts as $part ) {
+			if ( 'video' === $part ) {
+				continue;
+			}
+			if ( ctype_digit( $part ) ) {
+				return $part;
+			}
+		}
+
+		return '';
+
+	}
+
+	/**
+	 * Extracts the security hash from a Vimeo url.
+	 *
+	 * @param string $url The url.
+	 *
+	 * @return string The security hash.
+	 */
+	public static function get_vimeo_hash( $url ) {
+
+		// 1. Check path for pattern /ID/HASH.
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+		if ( $path ) {
+			$path  = trim( $path, '/' );
+			$parts = explode( '/', $path );
+
+			// If we have at least 2 parts and the first one we find as numeric is followed by another part.
+			foreach ( $parts as $index => $part ) {
+				if ( 'video' === $part ) {
+					continue;
+				}
+				if ( ctype_digit( $part ) ) {
+					if ( ! empty( $parts[ $index + 1 ] ) ) {
+						return $parts[ $index + 1 ];
+					}
+					break;
+				}
+			}
+		}
+
+		// 2. Check query parameter 'h'.
+		$query = wp_parse_url( $url, PHP_URL_QUERY );
+		if ( $query ) {
+			parse_str( $query, $params );
+			if ( ! empty( $params['h'] ) ) {
+				return $params['h'];
+			}
+		}
+
+		return '';
 
 	}
 
@@ -144,12 +204,21 @@ class WP_Video_Popup_Parser {
 	 *
 	 * @param string $vimeo_video_id The video's id.
 	 * @param int    $autoplay The autoplay argument value.
+	 * @param string $hash The security hash for private videos.
 	 *
 	 * @return string The embed url.
 	 */
-	public static function get_vimeo_embed_url( $vimeo_video_id, $autoplay = 1 ) {
+	public static function get_vimeo_embed_url( $vimeo_video_id, $autoplay = 1, $hash = '' ) {
 
-		return "https://player.vimeo.com/video/$vimeo_video_id?byline=0&amp;portrait=0&amp;autoplay=$autoplay";
+		$video_url = "https://player.vimeo.com/video/$vimeo_video_id";
+
+		if ( $hash ) {
+			$video_url .= "?h=$hash&byline=0&portrait=0&autoplay=$autoplay";
+		} else {
+			$video_url .= "?byline=0&portrait=0&autoplay=$autoplay";
+		}
+
+		return $video_url;
 
 	}
 
@@ -162,48 +231,48 @@ class WP_Video_Popup_Parser {
 	 */
 	public static function get_rumble_id( $url ) {
 
-		// Check if the URL contains 'embed'
+		// Check if the URL contains 'embed'.
 		if ( stripos( $url, 'embed' ) !== false ) {
-			// If URL contains 'embed', use this logic
+			// If URL contains 'embed', use this logic.
 			if ( stripos( $url, '/?' ) !== false ) {
 				$splits = explode( '/?', $url );
 				$url    = $splits[0];
 			}
 
-			// Remove trailing slash
+			// Remove trailing slash.
 			$url = untrailingslashit( $url );
 
-			// Extract the last part of the URL
+			// Extract the last part of the URL.
 			return self::parse_url_for_last_element( $url );
 		}
 
-		// If URL does not contain 'embed', use alternate logic
-		$iframely_api_url = 'https://iframely.com/api/try?url=' . urlencode( $url );
+		// If URL does not contain 'embed', use alternate logic.
+		$iframely_api_url = 'https://iframely.com/api/try?url=' . rawurlencode( $url );
 
-		// Fetch the data from Iframely API using wp_remote_get()
+		// Fetch the data from Iframely API using wp_remote_get().
 		$remote_response = wp_remote_get( $iframely_api_url );
 
-		// Check if the request was successful
+		// Check if the request was successful.
 		if ( is_wp_error( $remote_response ) ) {
 			return '';
 		}
 
-		// Decode the JSON response using json_decode()
+		// Decode the JSON response using json_decode().
 		$data = json_decode( $remote_response['body'], true );
 
-		if ( ! $data ) {
+		if ( ! $data || empty( $data['code'] ) ) {
 			return '';
 		}
 
 		$markup = $data['code'];
 
-		// Regular expression to extract the ID between "embed/" and the next "/"
+		// Regular expression to extract the ID between "embed/" and the next "/".
 		$pattern  = '/embed\/(.*?)\//';
 		$video_id = false;
 
-		// Apply the regex
+		// Apply the regex.
 		if ( preg_match( $pattern, $markup, $matches ) ) {
-			// Extracted ID
+			// Extracted ID.
 			$video_id = $matches[1];
 		}
 
@@ -237,7 +306,12 @@ class WP_Video_Popup_Parser {
 	 */
 	private static function parse_url_for_params( $url, $target_params ) {
 
-		parse_str( wp_parse_url( $url, PHP_URL_QUERY ), $my_array_of_params );
+		$query = wp_parse_url( $url, PHP_URL_QUERY );
+		if ( ! $query ) {
+			return null;
+		}
+
+		parse_str( $query, $my_array_of_params );
 
 		foreach ( $target_params as $target ) {
 			if ( array_key_exists( $target, $my_array_of_params ) ) {
