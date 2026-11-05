@@ -2,8 +2,10 @@
 /**
  * Plugin Name: WP Video Popup
  * Plugin URI: https://wp-video-popup.com
- * Description: Add beautiful responsive YouTube, Rumble & Vimeo Video lightbox popups to your WordPress website.
- * Version: 2.10.4
+ * Description: Add a YouTube, Vimeo or Rumble video popup to WordPress. Lightweight, privacy-friendly lightbox that works with any page builder.
+ * Version: 2.11
+ * Requires at least: 4.7
+ * Requires PHP: 5.6
  * Author: David Vongries
  * Author URI: https://mapsteps.com
  * License: GPL v2 or later
@@ -18,7 +20,7 @@ defined( 'ABSPATH' ) || die( "Can't access directly" );
 // Plugin constants.
 define( 'WP_VIDEO_POPUP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_VIDEO_POPUP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'WP_VIDEO_POPUP_PLUGIN_VERSION', '2.10.4' );
+define( 'WP_VIDEO_POPUP_PLUGIN_VERSION', '2.11' );
 define( 'WP_VIDEO_POPUP_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 // Clean up behind us.
@@ -73,7 +75,7 @@ add_action( 'admin_init', array( 'PAnD', 'init' ) );
  */
 function wp_video_popup_activation() {
 
-	if ( ! current_user_can( 'activate_plugins' ) || 'true' == get_option( 'wp_video_popup_plugin_activated' ) ) {
+	if ( ! current_user_can( 'activate_plugins' ) || 'true' === get_option( 'wp_video_popup_plugin_activated' ) ) {
 		return;
 	}
 
@@ -147,19 +149,22 @@ add_action( 'admin_notices', 'wp_video_popup_review_notice' );
  */
 function wp_video_popup_dismiss_review_notice() {
 
-	$nonce   = isset( $_POST['nonce'] ) ? $_POST['nonce'] : 0;
+	if ( ! check_ajax_referer( 'WP_Video_Popup_Dismiss_Review_Notice', 'nonce', false ) ) {
+		wp_send_json_error( __( 'Invalid Token', 'responsive-youtube-vimeo-popup' ) );
+	}
+
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( __( 'Insufficient permissions', 'responsive-youtube-vimeo-popup' ) );
+	}
+
 	$dismiss = isset( $_POST['dismiss'] ) ? absint( $_POST['dismiss'] ) : 0;
 
 	if ( empty( $dismiss ) ) {
 		wp_send_json_error( __( 'Invalid Request', 'responsive-youtube-vimeo-popup' ) );
 	}
 
-	if ( ! wp_verify_nonce( $nonce, 'WP_Video_Popup_Dismiss_Review_Notice' ) ) {
-		wp_send_json_error( __( 'Invalid Token', 'responsive-youtube-vimeo-popup' ) );
-	}
-
 	update_option( 'wp_video_popup_review_notice', 1 );
-	wp_send_json_success( __( 'Discount notice has been dismissed', 'responsive-youtube-vimeo-popup' ) );
+	wp_send_json_success( __( 'Review notice has been dismissed', 'responsive-youtube-vimeo-popup' ) );
 
 }
 add_action( 'wp_ajax_wp_video_popup_review_notice_dismissal', 'wp_video_popup_dismiss_review_notice' );
@@ -179,7 +184,7 @@ function wp_video_popup_review_notice_script() {
 		return;
 	}
 
-	wp_enqueue_script( 'wp-video-popup-review', WP_VIDEO_POPUP_PLUGIN_URL . '/assets/js/review-notice.js', array( 'jquery' ), WP_VIDEO_POPUP_PLUGIN_VERSION, true );
+	wp_enqueue_script( 'wp-video-popup-review', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/js/review-notice.js', array( 'jquery' ), WP_VIDEO_POPUP_PLUGIN_VERSION, true );
 
 	wp_localize_script(
 		'wp-video-popup-review',
@@ -196,6 +201,8 @@ add_action( 'admin_enqueue_scripts', 'wp_video_popup_review_notice_script' );
 
 /**
  * Admin scripts & styles.
+ *
+ * @param string $hook The current admin page hook.
  */
 function wp_video_popup_admin_scripts_styles( $hook ) {
 
@@ -220,12 +227,14 @@ add_action( 'admin_enqueue_scripts', 'wp_video_popup_admin_scripts_styles' );
  * Admin body class.
  *
  * @param string $classes The class names.
+ *
+ * @return string The class names.
  */
 function wp_video_popup_admin_body_class( $classes ) {
 
 	$screen = get_current_screen();
 
-	if ( $screen->id !== 'settings_page_wp-video-popup' ) {
+	if ( ! $screen || 'settings_page_wp-video-popup' !== $screen->id ) {
 		return $classes;
 	}
 
@@ -250,11 +259,17 @@ add_action( 'wp_enqueue_scripts', 'wp_video_popup_styles' );
 /**
  * Popup shortcode.
  *
- * @param array $wp_video_popup_atts The shortcode attributes.
+ * Usage:
+ * [wp-video-popup video="URL"] – popup only, opened by any element with the class wp-video-popup.
+ * [wp-video-popup video="URL" text="Watch video"] – popup plus a trigger button.
+ * [wp-video-popup video="URL"]<img …>[/wp-video-popup] – popup plus the content wrapped in a trigger.
+ *
+ * @param array  $wp_video_popup_atts The shortcode attributes.
+ * @param string $content The enclosed content (optional).
  *
  * @return string wp_video_popup_output The popup markup.
  */
-function wp_video_popup_shortcode( $wp_video_popup_atts ) {
+function wp_video_popup_shortcode( $wp_video_popup_atts, $content = null ) {
 
 	$wp_video_popup_atts = shortcode_atts(
 		array(
@@ -263,6 +278,7 @@ function wp_video_popup_shortcode( $wp_video_popup_atts ) {
 			'start'        => 0,
 			'hide-related' => 0,
 			'portrait'     => 0,
+			'text'         => '',
 		),
 		$wp_video_popup_atts,
 		'wp-video-popup'
@@ -271,13 +287,18 @@ function wp_video_popup_shortcode( $wp_video_popup_atts ) {
 	// Shortcode attributes.
 	$video        = esc_url( $wp_video_popup_atts['video'] );
 	$mute         = $wp_video_popup_atts['mute'] ? 1 : 0;
-	$start        = $wp_video_popup_atts['start'];
+	$start        = absint( $wp_video_popup_atts['start'] );
 	$hide_related = $wp_video_popup_atts['hide-related'] ? 1 : 0;
 	$viewport     = $wp_video_popup_atts['portrait'] ? 'is-portrait' : 'is-landscape';
 
 	// Parser data.
 	$video_type = WP_Video_Popup_Parser::identify_service( $video );
 	$video_url  = WP_Video_Popup_Parser::get_embed_url( $video );
+
+	// Don't output a broken popup if the video couldn't be identified.
+	if ( ! $video_url ) {
+		return '';
+	}
 
 	/* Construct Output */
 
@@ -316,29 +337,57 @@ function wp_video_popup_shortcode( $wp_video_popup_atts ) {
 	// Filter to let people add other URL parameters.
 	$video_url = apply_filters( 'wp_video_popup', $video_url );
 
-	if ( 'vimeo' === $video_type ) {
-
-		// Start Vimeo video at specific time.
-		if ( $start ) {
-			$video_url .= '#t=' . $start;
-		}
-
-	} else {
-
-		// Start YouTube video at specific time.
-		if ( $start ) {
-			$video_url .= '&start=' . $start;
-		}
-
+	// Start the video at a specific time (Vimeo uses a hash, YouTube & Rumble a parameter).
+	if ( $start ) {
+		$video_url .= 'vimeo' === $video_type ? '#t=' . $start : '&start=' . $start;
 	}
 
-	return '
-	<div class="wp-video-popup-wrapper">
-		<div class="wp-video-popup-close"></div>
-		<iframe class="wp-video-popup-video is-hosted ' . $viewport . '" src="" data-wp-video-popup-url="' . esc_url( $video_url ) . '" frameborder="0" allowfullscreen allow="autoplay">
+	$popup = '
+	<div class="wp-video-popup-wrapper" role="dialog" aria-modal="true" aria-label="' . esc_attr__( 'Video', 'responsive-youtube-vimeo-popup' ) . '">
+		<button type="button" class="wp-video-popup-close" aria-label="' . esc_attr__( 'Close video', 'responsive-youtube-vimeo-popup' ) . '"></button>
+		<iframe class="wp-video-popup-video is-hosted ' . $viewport . '" src="" data-wp-video-popup-url="' . esc_url( $video_url ) . '" title="' . esc_attr__( 'Video', 'responsive-youtube-vimeo-popup' ) . '" frameborder="0" allowfullscreen allow="autoplay; fullscreen; picture-in-picture">
 		</iframe>
 	</div>
 	';
+
+	return wp_video_popup_trigger( $content, $wp_video_popup_atts['text'] ) . $popup;
+
+}
+
+/**
+ * Trigger markup for the popup shortcode.
+ *
+ * Enclosed content wins over the text attribute. Without either, no trigger is output
+ * and any element with the class wp-video-popup opens the popup (the classic way).
+ *
+ * @param string|null $content The enclosed content.
+ * @param string      $text The button text.
+ *
+ * @return string The trigger markup.
+ */
+function wp_video_popup_trigger( $content, $text ) {
+
+	// Remove the stray paragraph & line break tags wpautop leaves around enclosed content.
+	$content = preg_replace( '#^(\s*(</p>|<br\s*/?>))+|((<p>|<br\s*/?>)\s*)+$#i', '', trim( (string) $content ) );
+	$content = trim( do_shortcode( shortcode_unautop( trim( $content ) ) ) );
+
+	if ( '' !== $content ) {
+
+		// Block-level content needs a block-level wrapper to keep the markup valid.
+		$tag = preg_match( '#<(p|div|figure|h[1-6]|ul|ol|table|section|blockquote)[\s>]#i', $content ) ? 'div' : 'span';
+
+		// The front-end script makes the wrapper focusable and keyboard-operable.
+		return '<' . $tag . ' class="wp-video-popup wp-video-popup-trigger is-wrapper">' . $content . '</' . $tag . '>';
+
+	}
+
+	$text = trim( (string) $text );
+
+	if ( '' !== $text ) {
+		return '<button type="button" class="wp-video-popup wp-video-popup-trigger">' . esc_html( $text ) . '</button>';
+	}
+
+	return '';
 
 }
 add_shortcode( 'wp-video-popup', 'wp_video_popup_shortcode' );
