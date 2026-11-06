@@ -1,6 +1,7 @@
 /**
  * WP Video Popup settings page.
  * Builds on heatbox.css and uses its --heatbox-* tokens.
+ * Shared by the free & PRO version, keep both copies identical.
  */
 
 /* Hide the PRO notice on the settings page itself */
@@ -8,106 +9,492 @@
 	display: none;
 }
 
-/* Getting started */
-.wpvp-builder {
-	display: grid;
-	gap: 16px;
-	margin-top: 12px;
-	padding: var(--heatbox-gap);
-	background: var(--heatbox-surface-hover);
-	border: 1px solid var(--heatbox-divider);
-	border-radius: var(--heatbox-radius);
+/* Brand layer: WP Video Popup's own colors on top of heatbox */
+.wpvp-admin-page {
+	--wpvp-brand: #c44341;
+	--wpvp-brand-dark: #a3302e;
+	--wpvp-ink: #1d2327;
 }
 
-.wpvp-builder-row {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	gap: 16px;
+/* PRO badge next to the page title (PRO) */
+.heatbox-wrap .title .wpvp-pro-badge {
+	margin: 0;
+	padding: 5px 12px;
+	font-size: 12px;
+	line-height: 1.2;
+	color: #fff;
+	background: var(--wpvp-brand);
 }
 
-.wpvp-builder-field label {
-	display: block;
-	margin-bottom: 6px;
-	font-weight: 600;
-	color: var(--heatbox-text);
+/* ==========================================================================
+   Shortcode builder: one card, one job
+   <section class="heatbox wpvp-studio">header, body, result</section>
+   ========================================================================== */
+
+.heatbox.wpvp-studio {
+	overflow: hidden;
 }
 
-/* Label with a tooltip next to it */
-.wpvp-builder-label {
-	display: flex;
-	align-items: center;
-	gap: 2px;
-	margin-bottom: 6px;
+.wpvp-studio-header {
+	padding: var(--heatbox-box-padding) var(--heatbox-box-padding) 0;
 }
 
-.wpvp-builder-label label {
-	margin-bottom: 0;
+.heatbox .wpvp-studio-header h2 {
+	margin: 0 0 6px;
+	padding: 0;
+	font-size: 22px;
+	line-height: 1.3;
+	border: 0;
 }
 
-.wpvp-builder-label .heatbox-tooltip {
-	margin: -4px 0;
+.heatbox .wpvp-studio-header p {
+	margin: 0;
+	font-size: 14px;
 	color: var(--heatbox-text-muted);
 }
 
-.wpvp-builder-label .dashicons {
+.wpvp-studio-body {
+	display: grid;
+	gap: 22px;
+	padding: 24px var(--heatbox-box-padding) var(--heatbox-box-padding);
+}
+
+/* Fields (the field look itself comes from heatbox) */
+.wpvp-studio-field label {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--heatbox-text);
+}
+
+.wpvp-studio-optional {
+	margin-inline-start: 4px;
+	font-weight: 400;
+	color: var(--heatbox-control-border);
+}
+
+.wpvp-studio input[type="text"],
+.wpvp-studio input[type="url"],
+.wpvp-studio input[type="number"] {
+	width: 100%;
+	max-width: none;
+	margin: 0;
+}
+
+/* The one field that matters most */
+.heatbox .wpvp-studio-field.is-primary input[type="url"] {
+	min-height: 52px;
+	padding-inline-end: 130px;
+	font-size: 15px;
+}
+
+.heatbox .wpvp-studio input[aria-invalid="true"] {
+	border-color: #d63638;
+}
+
+.heatbox .wpvp-studio-hint {
+	margin: 8px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--heatbox-text-muted);
+}
+
+.wpvp-studio-hint code {
+	padding: 1px 4px;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.heatbox .wpvp-studio-hint.is-invalid {
+	color: #d63638;
+}
+
+/* Video link with the detected service inside the field */
+.wpvp-builder-video {
+	position: relative;
+}
+
+.wpvp-service {
+	position: absolute;
+	top: 50%;
+	right: 8px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.5;
+	color: var(--heatbox-text);
+	background: var(--heatbox-surface-muted);
+	border-radius: 999px;
+	transform: translateY(-50%);
+	pointer-events: none;
+	animation: wpvp-pop 0.2s ease-out;
+}
+
+.wpvp-service[hidden] {
+	display: none;
+}
+
+.wpvp-service::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	background: var(--heatbox-text-muted);
+	border-radius: 50%;
+}
+
+.wpvp-service[data-service="youtube"]::before {
+	background: #ff0033;
+}
+
+.wpvp-service[data-service="vimeo"]::before {
+	background: #17d5ff;
+}
+
+.wpvp-service[data-service="rumble"]::before {
+	background: #85c742;
+}
+
+@keyframes wpvp-pop {
+	from {
+		opacity: 0;
+		transform: translateY(-50%) scale(0.9);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wpvp-service {
+		animation: none;
+	}
+}
+
+/* Options as toggle chips */
+.wpvp-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.heatbox .wpvp-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 7px 14px 7px 11px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--heatbox-text);
+	background: var(--heatbox-surface);
+	border: 1px solid var(--heatbox-border);
+	border-radius: 999px;
+	cursor: pointer;
+	user-select: none;
+	transition: color var(--heatbox-transition), background-color var(--heatbox-transition), border-color var(--heatbox-transition);
+}
+
+.wpvp-chip input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.wpvp-chip .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	color: var(--heatbox-text-muted);
+	transition: color var(--heatbox-transition);
+}
+
+.heatbox .wpvp-chip:hover {
+	border-color: var(--heatbox-control-border);
+}
+
+.heatbox .wpvp-chip:has(input:checked) {
+	color: #fff;
+	background: var(--wpvp-ink);
+	border-color: var(--wpvp-ink);
+}
+
+.wpvp-chip:has(input:checked) .dashicons {
+	color: #fff;
+}
+
+.wpvp-chip:has(input:focus-visible) {
+	box-shadow: 0 0 0 2px var(--heatbox-surface), 0 0 0 4px var(--heatbox-accent);
+}
+
+/* Advanced options, folded away */
+.wpvp-studio-advanced {
+	padding-top: 18px;
+	border-top: 1px solid var(--heatbox-box-border);
+}
+
+.wpvp-studio-advanced summary {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: fit-content;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--heatbox-text);
+	list-style: none;
+	cursor: pointer;
+}
+
+.wpvp-studio-advanced summary::-webkit-details-marker {
+	display: none;
+}
+
+.wpvp-studio-advanced summary::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	margin-inline-end: 2px;
+	border-right: 1.5px solid currentColor;
+	border-bottom: 1.5px solid currentColor;
+	transform: rotate(-45deg);
+	transition: transform var(--heatbox-transition);
+}
+
+.wpvp-studio-advanced[open] summary::before {
+	transform: rotate(45deg);
+}
+
+.wpvp-studio-advanced summary span {
+	font-weight: 400;
+	color: var(--heatbox-control-border);
+}
+
+.wpvp-studio-advanced summary:focus-visible {
+	border-radius: 4px;
+	outline: 2px solid var(--heatbox-accent);
+	outline-offset: 4px;
+}
+
+.wpvp-studio-grid {
+	display: grid;
+	grid-template-columns: 140px minmax(0, 1fr) minmax(0, 1fr);
+	gap: 16px;
+	margin-top: 18px;
+}
+
+.wpvp-studio-unit {
+	position: relative;
+}
+
+.heatbox .wpvp-studio-unit input[type="number"] {
+	padding-inline-end: 42px;
+}
+
+.wpvp-studio-unit span {
+	position: absolute;
+	top: 50%;
+	right: 14px;
+	font-size: 13px;
+	color: var(--heatbox-control-border);
+	transform: translateY(-50%);
+	pointer-events: none;
+}
+
+/* Result: the shortcode & the trigger class */
+.wpvp-studio-result {
+	padding: 20px var(--heatbox-box-padding) 22px;
+	background: var(--heatbox-surface-hover);
+	border-top: 1px solid var(--heatbox-box-border);
+}
+
+/* Dark code bar with syntax highlighting & a copy button */
+.wpvp-code {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 12px 12px 16px;
+	background: var(--wpvp-ink);
+	border-radius: var(--heatbox-radius);
+}
+
+.wpvp-code code {
+	flex-grow: 1;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #f0f0f1;
+	background: none;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere; /* Break between attributes, long URLs anywhere */
+}
+
+/* Keep an attribute (name="value") together where possible */
+.wpvp-token-attr,
+.wpvp-token-punct {
+	white-space: nowrap;
+}
+
+.wpvp-token-tag {
+	font-weight: 600;
+	color: #f0f0f1;
+}
+
+.wpvp-token-attr {
+	color: #9ec2ff;
+}
+
+.wpvp-token-punct {
+	color: #8c8f94;
+}
+
+.wpvp-token-value {
+	color: #ffb59e;
+}
+
+.wpvp-code-copy {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #fff;
+	background: var(--wpvp-brand);
+	border: 0;
+	border-radius: var(--heatbox-radius-small);
+	cursor: pointer;
+	transition: background-color var(--heatbox-transition);
+}
+
+.wpvp-code-copy:hover {
+	background: var(--wpvp-brand-dark);
+}
+
+.wpvp-code-copy:focus {
+	outline: none;
+}
+
+.wpvp-code-copy:focus-visible {
+	outline: 2px solid #fff;
+	outline-offset: 2px;
+}
+
+.wpvp-code-copy .dashicons {
 	width: 16px;
 	height: 16px;
 	font-size: 16px;
 }
 
-.wpvp-builder-field input.regular-text,
-.wpvp-builder-field input.large-text {
-	width: 100%;
-	max-width: 100%;
+.wpvp-code-copy.is-copied {
+	background: #00a32a;
 }
 
-.wpvp-builder-field input.small-text {
-	width: 110px;
+.wpvp-code-copy.is-copied .dashicons::before {
+	content: "\f147"; /* dashicons-yes */
 }
 
-.heatbox .wpvp-builder-field .description {
-	margin: 6px 0 0;
+.wpvp-studio-result .wpvp-code {
+	padding: 14px 14px 14px 18px;
+	border-radius: 10px;
 }
 
-.wpvp-builder-field .description.is-invalid {
-	color: #b32d2e;
-}
-
-.wpvp-builder-checkboxes {
+.heatbox .wpvp-studio-trigger {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 8px 24px;
+	align-items: center;
+	gap: 8px;
+	margin: 14px 0 0;
+	font-size: 13px;
+	color: var(--heatbox-text-muted);
 }
 
-.wpvp-builder .heatbox-copy code {
+.wpvp-class-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 4px 8px 4px 10px;
 	background: var(--heatbox-surface);
+	border: 1px solid var(--heatbox-border);
+	border-radius: 6px;
+	cursor: pointer;
+	transition: border-color var(--heatbox-transition);
 }
 
-.heatbox .wpvp-class-copy {
-	margin-bottom: 12px;
+.wpvp-class-chip:hover {
+	border-color: var(--wpvp-ink);
 }
 
-.wpvp-class-copy code {
-	flex-grow: 0;
+.wpvp-class-chip:focus-visible {
+	outline: 2px solid var(--heatbox-accent);
+	outline-offset: 2px;
+}
+
+.wpvp-class-chip code {
+	padding: 0;
+	font-size: 12px;
+	color: var(--wpvp-ink);
+	background: none;
+}
+
+.wpvp-class-chip .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	color: var(--heatbox-control-border);
+}
+
+.wpvp-class-chip.is-copied {
+	border-color: #00a32a;
+}
+
+.wpvp-class-chip.is-copied .dashicons {
+	color: #00a32a;
+}
+
+.wpvp-class-chip.is-copied .dashicons::before {
+	content: "\f147"; /* dashicons-yes */
 }
 
 @media screen and (max-width: 782px) {
-	.wpvp-builder {
-		padding: 16px;
+	.wpvp-studio-header {
+		padding: 22px 20px 0;
 	}
 
-	.wpvp-builder-row {
+	.wpvp-studio-body {
+		padding: 20px 20px 24px;
+	}
+
+	.wpvp-studio-result {
+		padding: 18px 20px 20px;
+	}
+
+	.wpvp-studio-grid {
 		grid-template-columns: 1fr;
-	}
-
-	.heatbox-steps > li {
-		padding-inline-start: 36px;
 	}
 }
 
-/* Size field */
+/* ==========================================================================
+   Settings
+   ========================================================================== */
+
+/* Popup size: device switcher pinned right next to the field, hint below the field.
+   Pinned (not in the flow) so the hint's width doesn't push the switcher away. */
+.wpvp-size-settings {
+	position: relative;
+}
+
 .wpvp-size-field {
-	width: 100px;
+	width: 120px;
+	margin: 0;
 }
 
 /* Device switcher */
@@ -116,7 +503,11 @@
 	flex-wrap: wrap;
 	align-items: center;
 	gap: 6px;
-	margin: 0 0 8px;
+	position: absolute;
+	top: 0;
+	left: 132px; /* Field width (120px) + 12px gap */
+	height: 40px; /* Same height as the field next to it */
+	margin: 0;
 	padding: 0;
 	list-style: none;
 }
@@ -143,6 +534,16 @@
 .wpvp-responsive-control:hover .wpvp-device-button {
 	color: var(--heatbox-text);
 	border-color: var(--heatbox-control-border);
+}
+
+/* Focus ring for keyboard use only, not after a mouse click */
+.wpvp-responsive-control .wpvp-device-button:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.wpvp-responsive-control .wpvp-device-button:focus-visible {
+	box-shadow: 0 0 0 2px var(--heatbox-surface), 0 0 0 4px var(--heatbox-accent);
 }
 
 .wpvp-responsive-control.is-active .wpvp-device-button {
@@ -191,6 +592,145 @@
 
 .wpvp-responsive-size.is-active {
 	display: block;
+}
+
+/* License status (PRO) */
+.heatbox .wpvp-license-badge.is-active {
+	color: #fff;
+	background: #008a20;
+}
+
+.heatbox .wpvp-license-badge.is-inactive {
+	color: #fff;
+	background: #d63638;
+}
+
+/* License key field with its buttons in one row (PRO) */
+.wpvp-license-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.wpvp-license-row .regular-text {
+	flex: 1 1 260px;
+	max-width: 25em;
+	margin: 0;
+}
+
+.wpvp-license-row .button {
+	margin: 0;
+}
+
+/* Color picker (Coloris): color preview inside the field */
+.wpvp-admin-page .clr-field input.wp-video-popup-color-picker {
+	width: 220px;
+	padding-inline-end: 40px;
+}
+
+.wpvp-admin-page .clr-field button {
+	right: 5px;
+	width: 22px;
+	height: 22px;
+	border-radius: var(--heatbox-radius-small);
+}
+
+/* Color picker popover, styled like the WP admin & heatbox */
+.heatbox-admin .clr-picker {
+	width: 232px;
+	padding: 12px;
+	gap: 0;
+	border: 1px solid var(--heatbox-border);
+	border-radius: var(--heatbox-radius);
+	box-shadow: var(--heatbox-shadow-raised);
+	box-sizing: border-box;
+}
+
+.heatbox-admin .clr-gradient {
+	height: 120px;
+	margin-bottom: 12px;
+	border-radius: var(--heatbox-radius-small);
+}
+
+.heatbox-admin .clr-hue,
+.heatbox-admin .clr-alpha {
+	width: calc(100% - 16px);
+	margin: 6px 8px;
+}
+
+.heatbox-admin .clr-alpha div,
+.heatbox-admin .clr-hue div {
+	width: 14px;
+	height: 14px;
+	margin-left: -7px;
+	box-shadow: 0 0 0 1px var(--heatbox-control-border);
+}
+
+.heatbox-admin .clr-preview {
+	width: 30px;
+	height: 30px;
+	margin: 12px 8px 12px 0;
+	border-radius: var(--heatbox-radius-small);
+}
+
+.heatbox-admin .clr-preview:before,
+.heatbox-admin .clr-preview:after,
+.heatbox-admin .clr-preview button {
+	border-radius: var(--heatbox-radius-small);
+}
+
+.heatbox-admin input.clr-color {
+	width: calc(100% - 38px);
+	height: 30px;
+	min-height: 30px;
+	margin: 12px 0;
+	padding: 0 8px;
+	color: var(--heatbox-text);
+	border: 1px solid var(--heatbox-control-border);
+	border-radius: var(--heatbox-radius-small);
+	font-family: inherit;
+	font-size: 13px;
+	text-align: left;
+}
+
+.heatbox-admin input.clr-color:focus {
+	border-color: var(--heatbox-accent);
+	box-shadow: 0 0 0 1px var(--heatbox-accent);
+}
+
+/* Default & Clear buttons, styled like WP secondary buttons */
+.heatbox-admin .wpvp-color-default,
+.heatbox-admin .clr-clear {
+	order: 2;
+	height: 26px;
+	margin: 0;
+	padding: 0 10px;
+	color: var(--heatbox-accent);
+	background: var(--heatbox-surface);
+	border: 1px solid var(--heatbox-accent);
+	border-radius: 3px;
+	font-family: inherit;
+	font-size: 13px;
+	line-height: 24px;
+	cursor: pointer;
+}
+
+.heatbox-admin .wpvp-color-default {
+	margin-inline-end: auto;
+}
+
+.heatbox-admin .wpvp-color-default:hover,
+.heatbox-admin .clr-clear:hover {
+	color: var(--heatbox-accent-darker);
+	border-color: var(--heatbox-accent-darker);
+	background: var(--heatbox-surface-muted);
+}
+
+.heatbox-admin .clr-keyboard-nav .clr-alpha input:focus + div,
+.heatbox-admin .clr-keyboard-nav .clr-hue input:focus + div,
+.heatbox-admin .clr-keyboard-nav .clr-marker:focus {
+	box-shadow: 0 0 0 2px var(--heatbox-accent), 0 0 2px 2px #fff;
 }
 
 /* Other products: same width as the settings above */

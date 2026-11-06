@@ -26,7 +26,7 @@ defined( 'ABSPATH' ) || die( "Can't access directly" );
 				</div>
 
 				<div>
-					<img src="<?php echo esc_url( WP_VIDEO_POPUP_PLUGIN_URL ); ?>assets/img/wp-video-popup-logo-1.png">
+					<img src="<?php echo esc_url( WP_VIDEO_POPUP_PLUGIN_URL ); ?>assets/img/wp-video-popup-logo-1.png" alt="">
 				</div>
 
 			</div>
@@ -41,10 +41,10 @@ defined( 'ABSPATH' ) || die( "Can't access directly" );
 
 		<div class="heatbox-main">
 
-			<!-- Faking H1 tag to place admin notices -->
-			<h1 style="display: none;"></h1>
+			<!-- WordPress places admin notices after this marker -->
+			<hr class="wp-header-end">
 
-			<?php require __DIR__ . '/metaboxes/getting-started.php'; ?>
+			<?php require __DIR__ . '/builder.php'; ?>
 
 			<div class="heatbox wpvp-settings-metabox is-locked">
 				<?php do_settings_sections( 'wp-video-popup-settings' ); ?>

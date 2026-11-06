@@ -51,7 +51,8 @@ add_action( 'admin_init', 'wp_video_popup_settings' );
  * Background color callback.
  */
 function wp_video_popup_background_color_callback() {
-	echo '<input type="text" name="wpvp_popup[bg_color]" value="" class="color-picker wp-video-popup-color-picker" data-alpha="true" data-default-color="rgba(0,0,0,0.88)" />';
+	echo '<input type="text" name="wpvp_popup[bg_color]" value="" class="color-picker wp-video-popup-color-picker" data-default-color="rgba(0,0,0,0.88)" autocomplete="off" />';
+	echo '<p class="description">' . esc_html__( 'Default: rgba(0, 0, 0, 0.88)', 'responsive-youtube-vimeo-popup' ) . '</p>';
 }
 
 /**
@@ -82,11 +83,7 @@ function wp_video_popup_size_callback() {
 
 		<ul class="wpvp-responsive-sizes">
 			<li class="wpvp-responsive-size wpvp-responsive-size-desktop is-active" data-size-device="desktop">
-				<input type="text" name="wpvp_popup[sizes][desktop]" class="wpvp-size-field" placeholder="75%" value="" />
-
-				<p class="description">
-					<?php esc_html_e( 'Default: 1200px', 'responsive-youtube-vimeo-popup' ); ?>
-				</p>
+				<input type="text" name="wpvp_popup[sizes][desktop]" class="wpvp-size-field" value="" />
 			</li>
 			<li class="wpvp-responsive-size wpvp-responsive-size-tablet" data-size-device="tablet">
 				<input type="text" name="wpvp_popup[sizes][tablet]" class="wpvp-size-field" value="" />
@@ -95,6 +92,10 @@ function wp_video_popup_size_callback() {
 				<input type="text" name="wpvp_popup[sizes][mobile]" class="wpvp-size-field" value="" />
 			</li>
 		</ul>
+
+		<p class="description">
+			<?php esc_html_e( 'Default: 1200px (e.g. 75% or 900px)', 'responsive-youtube-vimeo-popup' ); ?>
+		</p>
 	</div>
 
 	<?php

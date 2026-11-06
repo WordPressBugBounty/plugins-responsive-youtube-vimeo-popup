@@ -3,7 +3,7 @@
  * Plugin Name: WP Video Popup
  * Plugin URI: https://wp-video-popup.com
  * Description: Add a YouTube, Vimeo or Rumble video popup to WordPress. Lightweight, privacy-friendly lightbox that works with any page builder.
- * Version: 2.11
+ * Version: 2.11.1
  * Requires at least: 4.7
  * Requires PHP: 5.6
  * Author: David Vongries
@@ -20,7 +20,7 @@ defined( 'ABSPATH' ) || die( "Can't access directly" );
 // Plugin constants.
 define( 'WP_VIDEO_POPUP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_VIDEO_POPUP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'WP_VIDEO_POPUP_PLUGIN_VERSION', '2.11' );
+define( 'WP_VIDEO_POPUP_PLUGIN_VERSION', '2.11.1' );
 define( 'WP_VIDEO_POPUP_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
 // Clean up behind us.
@@ -46,7 +46,7 @@ function wp_video_popup_pro_ad() {
 
 		<div class="notice-body">
 			<div class="notice-icon">
-				<img src="<?php echo esc_url( WP_VIDEO_POPUP_PLUGIN_URL ); ?>assets/img/wp-video-popup-logo-1.png">
+				<img src="<?php echo esc_url( WP_VIDEO_POPUP_PLUGIN_URL ); ?>assets/img/wp-video-popup-logo-1.png" alt="">
 			</div>
 			<div class="notice-content">
 				<h2>
@@ -200,6 +200,35 @@ function wp_video_popup_review_notice_script() {
 add_action( 'admin_enqueue_scripts', 'wp_video_popup_review_notice_script' );
 
 /**
+ * Translatable labels for the settings page scripts.
+ *
+ * @return array The labels.
+ */
+function wp_video_popup_admin_i18n() {
+
+	return array(
+		'defaultColor' => __( 'Default', 'responsive-youtube-vimeo-popup' ),
+		'colorPicker'  => array(
+			'clearLabel' => __( 'Clear', 'responsive-youtube-vimeo-popup' ),
+			'a11y'       => array(
+				'open'        => __( 'Open color picker', 'responsive-youtube-vimeo-popup' ),
+				'close'       => __( 'Close color picker', 'responsive-youtube-vimeo-popup' ),
+				'clear'       => __( 'Clear the selected color', 'responsive-youtube-vimeo-popup' ),
+				/* translators: {s} & {v} are placeholders for the saturation & brightness values, keep them as they are. */
+				'marker'      => __( 'Saturation: {s}. Brightness: {v}.', 'responsive-youtube-vimeo-popup' ),
+				'hueSlider'   => __( 'Hue slider', 'responsive-youtube-vimeo-popup' ),
+				'alphaSlider' => __( 'Opacity slider', 'responsive-youtube-vimeo-popup' ),
+				'input'       => __( 'Color value field', 'responsive-youtube-vimeo-popup' ),
+				'format'      => __( 'Color format', 'responsive-youtube-vimeo-popup' ),
+				'swatch'      => __( 'Color swatch', 'responsive-youtube-vimeo-popup' ),
+				'instruction' => __( 'Saturation and brightness selector. Use up, down, left and right arrow keys to select.', 'responsive-youtube-vimeo-popup' ),
+			),
+		),
+	);
+
+}
+
+/**
  * Admin scripts & styles.
  *
  * @param string $hook The current admin page hook.
@@ -216,9 +245,12 @@ function wp_video_popup_admin_scripts_styles( $hook ) {
 	wp_enqueue_style( 'heatbox', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/css/heatbox.css', array(), WP_VIDEO_POPUP_PLUGIN_VERSION );
 	wp_enqueue_style( 'wp-video-popup', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/css/admin-page.css', array(), WP_VIDEO_POPUP_PLUGIN_VERSION );
 
-	// Color picker.
-	wp_enqueue_style( 'wp-color-picker' );
-	wp_enqueue_script( 'wp-video-popup', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/js/admin-page.js', array( 'wp-color-picker' ), WP_VIDEO_POPUP_PLUGIN_VERSION, true );
+	// Color picker (Coloris).
+	wp_enqueue_style( 'coloris', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/vendor/coloris/coloris.min.css', array(), '0.25.0' );
+	wp_enqueue_script( 'coloris', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/vendor/coloris/coloris.min.js', array(), '0.25.0', true );
+
+	wp_enqueue_script( 'wp-video-popup', WP_VIDEO_POPUP_PLUGIN_URL . 'assets/js/admin-page.js', array( 'jquery', 'coloris' ), WP_VIDEO_POPUP_PLUGIN_VERSION, true );
+	wp_localize_script( 'wp-video-popup', 'wpVideoPopupAdmin', wp_video_popup_admin_i18n() );
 
 }
 add_action( 'admin_enqueue_scripts', 'wp_video_popup_admin_scripts_styles' );
